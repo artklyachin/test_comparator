@@ -122,9 +122,7 @@ bool test3(const fs::path& path_to_run, fs::path path, std::stringstream& ss)
 
 bool test4(const fs::path& path_to_run, const fs::path& path_to_ref, fs::path path, std::stringstream& ss)
 {
-    //Memory Working Set Current = 260.2 Mb, Memory Working Set Peak = 724.2 Mb
     std::regex regex_memory_working("^Memory Working Set Current = \\d+\\.?\\d* Mb, Memory Working Set Peak = (\\d+\\.?\\d*) Mb");
-    //MESH::Bricks: Total=1772 Gas=592 Solid=456 Partial=724 Irregular=0
     std::regex regex_bricks("^MESH::Bricks: Total=(\\d+\\.?\\d*) Gas=\\d+\\.?\\d* Solid=\\d+\\.?\\d* Partial=\\d+\\.?\\d* Irregular=\\d+\\.?\\d*");
     bool fail = false;
 
@@ -201,8 +199,12 @@ void print_ok(std::ofstream& ofs, const fs::path& path_to_test, const fs::path& 
 
 void tests(fs::path path_to_log)
 {
-    if (path_to_log.filename() != "log") {
-        std::cerr << "this is not the log directory" << std::endl;
+    if (!fs::exists(fs::status(path_to_log.string()))) {
+        std::cerr << "does not exist" << std::endl;
+        return;
+    }
+    if (!fs::is_directory(fs::status(path_to_log.string())))  {
+        std::cerr << "not a directory" << std::endl;
         return;
     }
     try {
@@ -257,6 +259,5 @@ int main(int argc, char** argv)
         return 1;
     }
     std::string path = argv[1];
-    //std::string path = "D:\\art\\Programming\\internship\\mentor\\Task\\logs";
     tests(path);
 }
