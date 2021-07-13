@@ -1,0 +1,2 @@
+1\1.stdout: different 'Total' of bricks (ft_run=1772, ft_reference=1472, rel.diff=0.2, criterion=0.1)
+FAIL

@@ -1,0 +1,2 @@
+1\1.stdout: different 'Memory Working Set Peak' (ft_run=821, ft_reference=77.29, rel.diff=9.6, criterion=0.5)
+FAIL

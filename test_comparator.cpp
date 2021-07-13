@@ -137,7 +137,7 @@ bool test4(const fs::path& path_to_run, const fs::path& path_to_ref, fs::path pa
         std::smatch match3;
         if (std::regex_match(ifs_line, match3, regex_memory_working)) {
             double x = stod(match3[1].str());
-            if (isnan(max_memory_peak_run) || max_memory_peak_run < x) {
+            if (std::isnan(max_memory_peak_run) || max_memory_peak_run < x) {
                 max_memory_peak_run = x;
             }
         }
@@ -155,7 +155,7 @@ bool test4(const fs::path& path_to_run, const fs::path& path_to_ref, fs::path pa
         std::smatch match3;
         if (std::regex_match(ifs_line, match3, regex_memory_working)) {
             double x = stod(match3[1].str());
-            if (isnan(max_memory_peak_ref) || max_memory_peak_ref < x) {
+            if (std::isnan(max_memory_peak_ref) || max_memory_peak_ref < x) {
                 max_memory_peak_ref = x;
             }
         }
@@ -165,7 +165,7 @@ bool test4(const fs::path& path_to_run, const fs::path& path_to_ref, fs::path pa
             last_total_ref = x;
         }
     }
-    if (!isnan(max_memory_peak_ref) && !isnan(max_memory_peak_run)) {
+    if (!std::isnan(max_memory_peak_ref) && !std::isnan(max_memory_peak_run)) {
         double real_diff = (max_memory_peak_run - max_memory_peak_ref) / max_memory_peak_ref;
         double criterion = 0.5;
         if (abs(real_diff) > criterion) {
@@ -173,7 +173,7 @@ bool test4(const fs::path& path_to_run, const fs::path& path_to_ref, fs::path pa
             fail = true;
         }
     }
-    if (!isnan(last_total_ref) && !isnan(last_total_run)) {
+    if (!std::isnan(last_total_ref) && !std::isnan(last_total_run)) {
         double real_diff = (last_total_run - last_total_ref) / last_total_ref;
         double criterion = 0.1;
         if (abs(real_diff) > criterion) {
@@ -201,43 +201,51 @@ void print_ok(std::ofstream& ofs, const fs::path& path_to_test, const fs::path& 
 
 void tests(fs::path path_to_log)
 {
-    for (const auto& global_entry : fs::directory_iterator(path_to_log)) {
-        for (const auto& entry : fs::directory_iterator(global_entry.path())) {
+    if (path_to_log.filename() != "log") {
+        std::cerr << "this is not the log directory" << std::endl;
+        return;
+    }
+    try {
+        for (const auto& global_entry : fs::directory_iterator(path_to_log)) {
+            for (const auto& entry : fs::directory_iterator(global_entry.path())) {
 
-            std::ofstream ofs(entry.path() / "report.txt");
-            const auto path_to_ref = entry.path() / "ft_reference";
-            const auto path_to_run = entry.path() / "ft_run";
-            std::stringstream ss;
-            bool fail;
-            //1
-            fail = test1(path_to_run, path_to_ref, ss);
-            if (fail) {
-                print_fail(ss, ofs, entry.path(), path_to_log);
-                continue;
+                std::ofstream ofs(entry.path() / "report.txt");
+                const auto path_to_ref = entry.path() / "ft_reference";
+                const auto path_to_run = entry.path() / "ft_run";
+                std::stringstream ss;
+                bool fail;
+                //1
+                fail = test1(path_to_run, path_to_ref, ss);
+                if (fail) {
+                    print_fail(ss, ofs, entry.path(), path_to_log);
+                    continue;
+                }
+
+                //2
+                fail = test2(path_to_run, path_to_ref, ss);
+                if (fail) {
+                    print_fail(ss, ofs, entry.path(), path_to_log);
+                    continue;
+                }
+
+                //3,4
+                std::vector<fs::path> vec_paths_to_run = paths_to(path_to_run);
+
+                for (fs::path path : vec_paths_to_run) {
+                    bool fail3 = test3(path_to_run, path, ss);
+                    bool fail4 = test4(path_to_run, path_to_ref, path, ss);
+                    fail = fail || fail3 || fail4;
+                }
+                if (fail) {
+                    print_fail(ss, ofs, entry.path(), path_to_log);
+                    continue;
+                }
+
+                print_ok(ofs, entry.path(), path_to_log);
             }
-
-            //2
-            fail = test2(path_to_run, path_to_ref, ss);
-            if (fail) {
-                print_fail(ss, ofs, entry.path(), path_to_log);
-                continue;
-            }
-
-            //3,4
-            std::vector<fs::path> vec_paths_to_run = paths_to(path_to_run);
-
-            for (fs::path path : vec_paths_to_run) {
-                bool fail3 = test3(path_to_run, path, ss);
-                bool fail4 = test4(path_to_run, path_to_ref, path, ss);
-                fail = fail || fail3 || fail4;
-            }
-            if (fail) {
-                print_fail(ss, ofs, entry.path(), path_to_log);
-                continue;
-            }
-
-            print_ok(ofs, entry.path(), path_to_log);
         }
+    } catch (std::exception& e) {
+        std::cerr << e.what() << std::endl;
     }
     return;
 }
@@ -249,7 +257,6 @@ int main(int argc, char** argv)
         return 1;
     }
     std::string path = argv[1];
-    
     //std::string path = "D:\\art\\Programming\\internship\\mentor\\Task\\logs";
     tests(path);
 }
